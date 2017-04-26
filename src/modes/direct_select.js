@@ -26,10 +26,15 @@ module.exports = function(ctx, opts) {
   let canDragMove = false;
 
   let selectedCoordPaths = opts.coordPath ? [opts.coordPath] : [];
-  const selectedCoordinates = pathsToCoordinates(featureId, selectedCoordPaths);
-  ctx.store.setSelectedCoordinates(selectedCoordinates);
+
+  const updateSelectedCoordinates = function () {
+    const selectedCoordinates = pathsToCoordinates(featureId, selectedCoordPaths);
+    ctx.store.setSelectedCoordinates(selectedCoordinates);
+  };
+  updateSelectedCoordinates();
 
   const fireUpdate = function() {
+    updateSelectedCoordinates();
     ctx.map.fire(Constants.events.UPDATE, {
       action: Constants.updateActions.CHANGE_COORDINATES,
       features: ctx.store.getSelected().map(f => f.toGeoJSON())
@@ -64,8 +69,7 @@ module.exports = function(ctx, opts) {
     } else if (isShiftDown(e) && selectedIndex === -1) {
       selectedCoordPaths.push(about.coord_path);
     }
-    const selectedCoordinates = pathsToCoordinates(featureId, selectedCoordPaths);
-    ctx.store.setSelectedCoordinates(selectedCoordinates);
+    updateSelectedCoordinates();
     feature.changed();
   };
 
@@ -73,8 +77,8 @@ module.exports = function(ctx, opts) {
     startDragging(e);
     const about = e.featureTarget.properties;
     feature.addCoordinate(about.coord_path, about.lng, about.lat);
-    fireUpdate();
     selectedCoordPaths = [about.coord_path];
+    fireUpdate();
   };
 
   function pathsToCoordinates(featureId, paths) {
